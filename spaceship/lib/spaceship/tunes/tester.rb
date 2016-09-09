@@ -97,14 +97,16 @@ module Spaceship
         # @param first_name (String) (optional): The first name of the new tester
         # @param last_name (String) (optional): The last name of the new tester
         # @param groups (Array) (option): Names/IDs of existing groups for the new tester
+        # @param app_id (String) (optional): The numeric apple id of the application.
         # @example
-        #   Spaceship::Tunes::Tester.external.create!(email: "tester@mathiascarignani.com", first_name: "Cary", last_name: "Bennett", groups: ["Testers"])
+        #   Spaceship::Tunes::Tester.external.create!(email: "tester@mathiascarignani.com", first_name: "Cary", last_name:"Bennett", app_id:"12345467", groups:["Testers"])
         # @return (Tester): The newly created tester
-        def create!(email: nil, first_name: nil, last_name: nil, groups: nil)
+        def create!(email: nil, first_name: nil, last_name: nil, app_id: nil, groups: nil)
           data = client.create_tester!(tester: self,
                                         email: email,
                                    first_name: first_name,
                                     last_name: last_name,
+                                       app_id: app_id,
                                        groups: groups)
           self.factory(data)
         end
@@ -160,6 +162,7 @@ module Spaceship
             index: "ra/users/pre/ext",
             index_by_app: "ra/user/externalTesters/#{app_id}/",
             create: "ra/users/pre/create",
+            create_by_app: "ra/user/externalTesters/#{app_id}/",
             delete: "ra/users/pre/ext/delete",
             update_by_app: "ra/user/externalTesters/#{app_id}/"
           }

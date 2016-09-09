@@ -18,43 +18,39 @@ module Pilot
         config[:groups] = selected_groups
       end
 
-      begin
-        tester = Spaceship::Tunes::Tester::Internal.find(config[:email])
-        tester ||= Spaceship::Tunes::Tester::External.find(config[:email])
+      tester = lookup_tester
 
+      begin
         if tester
           UI.success("Existing tester #{tester.email}")
         else
           tester = Spaceship::Tunes::Tester::External.create!(email: config[:email],
                                                               first_name: config[:first_name],
                                                               last_name: config[:last_name],
+                                                              app_id: @apple_id,
                                                               groups: config[:groups])
           UI.success("Successfully invited tester: #{tester.email}")
         end
-
-        app_filter = (config[:apple_id] || config[:app_identifier])
-        if app_filter
-          begin
-            app = Spaceship::Application.find(app_filter)
-            UI.user_error!("Couldn't find app with '#{app_filter}'") unless app
-            tester.add_to_app!(app.apple_id)
-            UI.success("Successfully added tester to app #{app_filter}")
-          rescue => ex
-            UI.error("Could not add #{tester.email} to app: #{ex}")
-            raise ex
-          end
-        end
       rescue => ex
-        UI.error("Could not create tester #{config[:email]}")
+        UI.error("Could not create tester #{config[:email]}: #{ex}")
         raise ex
+      end
+
+      if @apple_id
+        begin
+          tester.add_to_app!(@apple_id)
+          UI.success("Successfully added tester to app #{@apple_id}")
+        rescue => ex
+          UI.error("Could not add tester #{tester.email} to app #{@apple_id}: #{ex}")
+          raise ex
+        end
       end
     end
 
     def find_tester(options)
       start(options)
 
-      tester = Spaceship::Tunes::Tester::Internal.find(config[:email])
-      tester ||= Spaceship::Tunes::Tester::External.find(config[:email])
+      tester = lookup_tester
 
       UI.user_error!("Tester #{config[:email]} not found") unless tester
 
@@ -65,27 +61,23 @@ module Pilot
     def remove_tester(options)
       start(options)
 
-      tester = Spaceship::Tunes::Tester::External.find(config[:email])
-      tester ||= Spaceship::Tunes::Tester::Internal.find(config[:email])
+      tester = lookup_tester
 
       if tester
-        app_filter = (config[:apple_id] || config[:app_identifier])
-        if app_filter
-          begin
-            app = Spaceship::Application.find(app_filter)
-            UI.user_error!("Couldn't find app with '#{app_filter}'") unless app
-            tester.remove_from_app!(app.apple_id)
-            UI.success("Successfully removed tester #{tester.email} from app #{app_filter}")
-          rescue => ex
-            UI.error("Could not remove #{tester.email} from app: #{ex}")
-            raise ex
+        begin
+          if @apple_id
+            tester.remove_from_app!(@apple_id)
+            UI.success("Successfully removed tester #{tester.email} from app #{@apple_id}")
+          else
+            tester.delete!
+            UI.success("Successfully removed tester #{tester.email}")
           end
-        else
-          tester.delete!
-          UI.success("Successfully removed tester #{tester.email}")
+        rescue => ex
+          UI.error("Could not remove tester #{tester.email}" + (@apple_id ? " from app #{@apple_id}" : "") + ": #{ex}")
+          raise ex
         end
       else
-        UI.error("Tester not found: #{config[:email]}")
+        UI.error("Tester #{config[:email]} not found")
       end
     end
 
@@ -203,6 +195,20 @@ module Pilot
         title: tester.email.green,
         rows: rows
       )
+    end
+
+    def lookup_tester
+      find_app_id_no_prompt
+
+      identifier = config[:email]
+      if @apple_id
+        tester = Spaceship::Tunes::Tester::External.find_by_app(@apple_id, identifier)
+        tester ||= Spaceship::Tunes::Tester::Internal.find_by_app(@apple_id, identifier)
+      else
+        tester = Spaceship::Tunes::Tester::External.find(identifier)
+        tester ||= Spaceship::Tunes::Tester::Internal.find(identifier)
+      end
+      return tester
     end
   end
 end

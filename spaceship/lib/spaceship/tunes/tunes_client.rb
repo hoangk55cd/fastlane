@@ -1158,8 +1158,15 @@ module Spaceship
       @cached_groups = parse_response(r, 'data')['groups']
     end
 
-    def create_tester!(tester: nil, email: nil, first_name: nil, last_name: nil, groups: nil)
-      url = tester.url[:create]
+    def create_tester!(tester: nil, email: nil, first_name: nil, last_name: nil, app_id: nil, groups: nil)
+      if app_id
+        url = tester.url(app_id)[:create_by_app]
+        arr_key = 'users'
+      else
+        url = tester.url[:create]
+        arr_key = 'testers'
+      end
+
       raise "Action not provided for this tester type." unless url
 
       tester_data = {
@@ -1201,7 +1208,7 @@ module Spaceship
         end
       end
 
-      data = { testers: [tester_data] }
+      data = Hash[arr_key, [tester_data]]
 
       r = request(:post) do |req|
         req.url url
@@ -1209,8 +1216,8 @@ module Spaceship
         req.headers['Content-Type'] = 'application/json'
       end
 
-      data = parse_response(r, 'data')['testers']
-      handle_itc_response(data) || data[0]
+      data = parse_response(r, 'data')[arr_key]
+      handle_itc_response(data) || data.detect { |element| element['emailAddress']['value'] == email }
     end
 
     def delete_tester!(tester)
