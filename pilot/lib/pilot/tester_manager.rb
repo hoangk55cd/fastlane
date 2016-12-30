@@ -51,7 +51,7 @@ module Pilot
       start(options)
 
       tester = lookup_tester
-
+      
       UI.user_error!("Tester #{config[:email]} not found") unless tester
 
       describe_tester(tester)
@@ -167,7 +167,7 @@ module Pilot
       rows << ["Last name", tester.last_name]
       rows << ["Email", tester.email]
 
-      if tester.groups.length > 0
+      if tester.groups && tester.groups.length > 0
         rows << ["Groups", tester.groups_list]
       end
 
