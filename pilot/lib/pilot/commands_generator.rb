@@ -141,6 +141,18 @@ module Pilot
         end
       end
 
+      command :jsonexport do |c|
+        c.syntax = "fastlane pilot jsonexport"
+        c.description = "Exports all external testers to a json-formatted file"
+
+        FastlaneCore::CommanderGenerator.new.generate(Pilot::Options.available_options, command: c)
+
+        c.action do |args, options|
+          config = FastlaneCore::Configuration.create(Pilot::Options.available_options, convert_options(options))
+          Pilot::TesterExporter.new.export_testers_json(config)
+        end
+      end
+
       command :import do |c|
         c.syntax = "fastlane pilot import"
         c.description = "Create external testers from a CSV file"
