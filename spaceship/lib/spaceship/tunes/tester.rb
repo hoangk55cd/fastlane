@@ -55,6 +55,12 @@ module Spaceship
       # @return [Integer] The version number of the last installed build
       attr_accessor :latest_installed_version_number
 
+      # @return [Integer] Number of sessions of the last installed build
+      attr_accessor :latest_installed_build_sessions
+
+      # @return [Integer] Number of crashes of the last installed build
+      attr_accessor :latest_installed_build_crashes
+
       attr_mapping(
         'testerId' => :tester_id,
         'emailAddress.value' => :email,
@@ -62,10 +68,12 @@ module Spaceship
         'lastName.value' => :last_name,
         'groups' => :groups,
         'devices' => :devices,
-        'latestInstalledAppAdamId' => :latest_install_app_id,
-        'latestInstalledDate' => :latest_install_date,
-        'latestInstalledVersion' => :latest_installed_version_number,
-        'latestInstalledShortVersion' => :latest_installed_build_number
+        'latestInstallByPlatform.ios.appAdamId' => :latest_install_app_id,
+        'latestInstallByPlatform.ios.version' => :latest_installed_version_number,
+        'latestInstallByPlatform.ios.shortVersion' => :latest_installed_build_number,
+        'latestInstallByPlatform.ios.installDate' => :latest_install_date,
+        'latestInstallByPlatform.ios.sessions' => :latest_installed_build_sessions,
+        'latestInstallByPlatform.ios.crashes' => :latest_installed_build_crashes,
       )
 
       class << self
