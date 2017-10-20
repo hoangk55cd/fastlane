@@ -161,6 +161,18 @@ module Pilot
         end
       end
 
+      command :resend_invites do |c|
+        c.syntax = "fastlane pilot resend_invites"
+        c.description = "Resend invites to all testers"
+
+        FastlaneCore::CommanderGenerator.new.generate(Pilot::Options.available_options, command: c)
+
+        c.action do |args, options|
+          config = create_config(options)
+          Pilot::TesterManager.new.resend_invites_to_testers(config)
+        end
+      end
+
       command :import do |c|
         c.syntax = "fastlane pilot import"
         c.description = "Import external testers from a CSV file called testers.csv"

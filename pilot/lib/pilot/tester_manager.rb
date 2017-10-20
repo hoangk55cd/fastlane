@@ -95,6 +95,17 @@ module Pilot
       end
     end
 
+    def resend_invites_to_testers(options)
+      start(options)
+
+      app_filter = (config[:apple_id] || config[:app_identifier])
+      if app_filter
+        resend_invites_to_testers_of_app(app_filter)
+      else
+        UI.user_error!("Specify app identifer to resend invites")
+      end
+    end
+
     private
 
     def find_app(app_filter: nil)
@@ -188,6 +199,22 @@ module Pilot
              headings: headings,
              rows: FastlaneCore::PrintTable.transform_output(rows)
       ))
+    end
+
+    def resend_invites_to_testers_of_app(app_filter)
+      app = Spaceship::Application.find(app_filter)
+      UI.user_error!("Couldn't find app with '#{app_filter}'") unless app
+
+      ext_testers = Spaceship::TestFlight::Tester.all(app_id: app.apple_id)
+      # nag only those who were invited more than one 1 week ago
+      testers_to_invite = ext_testers.select do |tester|
+        tester.status == 'invited' and tester.status_mod_time.to_i < (Time.now.to_f - 604800)
+      end
+      UI.message("Resending invite to #{testers_to_invite.count} testers")
+      testers_to_invite.map do |tester|
+        UI.message("Resending invite to #{tester.first_name} #{tester.last_name}")
+        Spaceship::TestFlight::Tester.resend_invite(app_id: app.apple_id, tester_id: tester.tester_id)
+      end
     end
 
     # Print out all the details of a specific tester
